@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "dev": "NODE_NO_WARNINGS=1 nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
@@ -21,6 +21,7 @@
     "@heroicons/vue": "^2.2.0",
     "@nuxtjs/tailwindcss": "^6.12.2",
     "chart.js": "^4.4.7",
+    "chartjs-plugin-zoom": "^2.2.0",
     "dayjs": "^1.11.13",
     "vue-chartjs": "^5.3.2"
   }
