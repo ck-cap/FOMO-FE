@@ -1,4 +1,5 @@
 import type { ChartData, ChartOptions } from 'chart.js'
+import zoomPlugin from 'chartjs-plugin-zoom'
 
 export interface StockData {
   symbol: string;
@@ -15,6 +16,12 @@ export interface ChartDataset {
   tension?: number;
 }
 
-export type StockChartData = ChartData<'line', (number | null)[], string>
+export interface ExtendedChartOptions extends ChartOptions<'line'> {
+  plugins?: {
+    zoom?: typeof zoomPlugin['defaults'];
+  } & NonNullable<ChartOptions<'line'>['plugins']>;
+}
 
-export type StockChartOptions = ChartOptions<'line'>
+export type StockChartData = ChartData<'line', (number | null)[], string>;
+
+export type StockChartOptions = ExtendedChartOptions;
