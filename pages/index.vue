@@ -5,218 +5,224 @@
         <CardTitle class="text-2xl font-bold">Stock Price Prediction</CardTitle>
       </CardHeader>
       
-    <!-- Market Status Indicator -->
-    <div 
-      v-if="liveData" 
-      class="fixed top-4 right-4 flex items-center space-x-2 p-2 rounded-lg shadow-lg"
-      :class="[
-        liveData.market_status.state === 'OPEN' 
-          ? 'bg-green-100 dark:bg-green-900' 
-          : 'bg-gray-100 dark:bg-gray-900'
-      ]"
-    >
-      <div class="relative">
-        <div 
-          class="w-3 h-3 rounded-full"
-          :class="[
-            liveData.market_status.state === 'OPEN' 
-              ? 'bg-green-500 animate-pulse' 
-              : 'bg-gray-500'
-          ]"
-        />
-        <div 
-          v-if="liveData.market_status.state === 'OPEN'"
-          class="absolute -inset-1 bg-green-500 rounded-full animate-ping opacity-20"
-        />
-      </div>
-      <span class="text-sm font-medium">
-        Market {{ liveData.market_status.state }}
-        <span v-if="liveData.market_status.state === 'CLOSED' && liveData.market_status.next_open" 
-              class="text-xs ml-1">
-          (Opens {{ formatNextOpen(liveData.market_status.next_open) }})
+      <!-- Market Status Indicator -->
+      <div 
+        v-if="liveData" 
+        class="fixed top-4 right-4 flex items-center space-x-2 p-2 rounded-lg shadow-lg"
+        :class="[
+          liveData.market_status.state === 'OPEN' 
+            ? 'bg-green-100 dark:bg-green-900' 
+            : 'bg-gray-100 dark:bg-gray-900'
+        ]"
+      >
+        <div class="relative">
+          <div 
+            class="w-3 h-3 rounded-full"
+            :class="[
+              liveData.market_status.state === 'OPEN' 
+                ? 'bg-green-500 animate-pulse' 
+                : 'bg-gray-500'
+            ]"
+          />
+          <div 
+            v-if="liveData.market_status.state === 'OPEN'"
+            class="absolute -inset-1 bg-green-500 rounded-full animate-ping opacity-20"
+          />
+        </div>
+        <span class="text-sm font-medium">
+          Market {{ liveData.market_status.state }}
+          <span v-if="liveData.market_status.state === 'CLOSED' && liveData.market_status.next_open" 
+                class="text-xs ml-1">
+            (Opens {{ formatNextOpen(liveData.market_status.next_open) }})
+          </span>
         </span>
-      </span>
-    </div>
+      </div>
 
       <CardContent>
-        <!-- Selected Stock Info -->
-        <div v-if="liveData" class="mb-8">
-          <div class="flex items-center space-x-4 p-4 bg-muted rounded-lg">
-            <!-- Company Logo -->
-            <div class="w-16 h-16 flex items-center justify-center bg-white rounded-lg p-2">
-              <img 
-                :src="`/company-logos/${formInputs.symbol.toLowerCase()}.svg`" 
-                :alt="`${formInputs.symbol} logo`"
-                class="w-full h-full object-contain"
-                @error="handleImageError"
-              />
-            </div>
-            
-            <!-- Company Info -->
-            <div class="flex-1">
-              <div class="flex items-center gap-2">
-                <h3 class="text-xl font-semibold">{{ liveData.company_name }}</h3>
-                <Badge 
-                  :variant="liveData.market_status.state === 'OPEN' ? 'default' : 'secondary'"
-                  class="animate-fade-in"
-                >
-                  {{ liveData.market_status.state }}
-                </Badge>
-              </div>
-              
-              <!-- Price Information -->
-              <div class="grid grid-cols-3 gap-6 mt-4">
-                <div>
-                  <span class="text-sm text-muted-foreground">Current Price</span>
-                  <p class="text-2xl font-bold">${{ liveData.current_price.toFixed(2) }}</p>
-                  <span class="text-xs text-muted-foreground">
-                    Previous Close: ${{ liveData.previous_close.toFixed(2) }}
-                  </span>
+        <!-- Main Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Left Column: Stock Info and Controls -->
+          <div class="space-y-8">
+            <!-- Selected Stock Info -->
+            <div v-if="liveData">
+              <div class="flex items-center space-x-4 p-4 bg-muted rounded-lg">
+                <!-- Company Logo -->
+                <div class="w-16 h-16 flex items-center justify-center bg-white rounded-lg p-2">
+                  <img 
+                    :src="`/company-logos/${formInputs.symbol.toLowerCase()}.svg`" 
+                    :alt="`${formInputs.symbol} logo`"
+                    class="w-full h-full object-contain"
+                    @error="handleImageError"
+                  />
                 </div>
-                <div>
-                  <span class="text-sm text-muted-foreground">Change</span>
-                  <div class="flex items-center space-x-2">
-                    <ArrowUp 
-                      v-if="liveData.price_change > 0" 
-                      class="w-4 h-4 text-green-500"
-                    />
-                    <ArrowDown 
-                      v-if="liveData.price_change < 0" 
-                      class="w-4 h-4 text-red-500"
-                    />
-                    <p 
-                      class="text-lg font-semibold"
-                      :class="{
-                        'text-green-500': liveData.price_change > 0,
-                        'text-red-500': liveData.price_change < 0
-                      }"
+                
+                <!-- Company Info -->
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-xl font-semibold">{{ liveData.company_name }}</h3>
+                    <Badge 
+                      :variant="liveData.market_status.state === 'OPEN' ? 'default' : 'secondary'"
+                      class="animate-fade-in"
                     >
-                      {{ liveData.price_change > 0 ? '+' : '' }}{{ liveData.price_change.toFixed(2) }}
-                      ({{ liveData.price_change_percent.toFixed(2) }}%)
-                    </p>
+                      {{ liveData.market_status.state }}
+                    </Badge>
+                  </div>
+                  
+                  <!-- Price Information -->
+                  <div class="grid grid-cols-1 gap-4 mt-4">
+                    <div>
+                      <span class="text-sm text-muted-foreground">Current Price</span>
+                      <p class="text-2xl font-bold">${{ liveData.current_price.toFixed(2) }}</p>
+                      <span class="text-xs text-muted-foreground">
+                        Previous Close: ${{ liveData.previous_close.toFixed(2) }}
+                      </span>
+                    </div>
+                    <div>
+                      <span class="text-sm text-muted-foreground">Change</span>
+                      <div class="flex items-center space-x-2">
+                        <ArrowUp 
+                          v-if="liveData.price_change > 0" 
+                          class="w-4 h-4 text-green-500"
+                        />
+                        <ArrowDown 
+                          v-if="liveData.price_change < 0" 
+                          class="w-4 h-4 text-red-500"
+                        />
+                        <p 
+                          class="text-lg font-semibold"
+                          :class="{
+                            'text-green-500': liveData.price_change > 0,
+                            'text-red-500': liveData.price_change < 0
+                          }"
+                        >
+                          {{ liveData.price_change > 0 ? '+' : '' }}{{ liveData.price_change.toFixed(2) }}
+                          ({{ liveData.price_change_percent.toFixed(2) }}%)
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <span class="text-sm text-muted-foreground">Volume</span>
+                      <p class="text-lg font-semibold">{{ formatNumber(liveData.volume) }}</p>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <span class="text-sm text-muted-foreground">Volume</span>
-                  <p class="text-lg font-semibold">{{ formatNumber(liveData.volume) }}</p>
-                </div>
               </div>
             </div>
-          </div>
-        </div> 
-        </CardContent>
 
-      <CardContent>
-        <!-- Input Form -->
-        <form @submit.prevent="generatePrediction" class="space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="space-y-2">
-              <Label for="symbol">Stock Symbol</Label>
-              <Select 
-                v-model="formInputs.symbol"
-                @update:modelValue="handleTickerChange"
-              >
-                <SelectTrigger id="symbol" class="w-full">
-                  <SelectValue placeholder="Select stock" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem 
-                    v-for="ticker in availableTickers" 
-                    :key="ticker" 
-                    :value="ticker"
+            <!-- Input Form -->
+            <form @submit.prevent="generatePrediction" class="space-y-6">
+              <div class="grid grid-cols-1 gap-4">
+                <div class="space-y-2">
+                  <Label for="symbol">Stock Symbol</Label>
+                  <Select 
+                    v-model="formInputs.symbol"
+                    @update:modelValue="handleTickerChange"
                   >
-                    {{ ticker }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                    <SelectTrigger id="symbol" class="w-full">
+                      <SelectValue placeholder="Select stock" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem 
+                        v-for="ticker in availableTickers" 
+                        :key="ticker" 
+                        :value="ticker"
+                      >
+                        {{ ticker }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div class="space-y-2">
-              <Label for="lookback">Lookback Period</Label>
-              <Select 
-                v-model="formInputs.lookbackYears"
-                @update:modelValue="handleFormChange"
-              >
-                <SelectTrigger id="lookback" class="w-full">
-                  <SelectValue placeholder="Select period" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 Year</SelectItem>
-                  <SelectItem value="2">2 Years</SelectItem>
-                  <SelectItem value="3">3 Years</SelectItem>
-                  <SelectItem value="5">5 Years</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div class="space-y-2">
+                  <Label for="lookback">Lookback Period</Label>
+                  <Select 
+                    v-model="formInputs.lookbackYears"
+                    @update:modelValue="handleFormChange"
+                  >
+                    <SelectTrigger id="lookback" class="w-full">
+                      <SelectValue placeholder="Select period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 Year</SelectItem>
+                      <SelectItem value="2">2 Years</SelectItem>
+                      <SelectItem value="3">3 Years</SelectItem>
+                      <SelectItem value="5">5 Years</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div class="space-y-2">
-              <Label for="forecast">Forecast Days</Label>
-              <Input 
-                id="forecast"
-                v-model="formInputs.forecastDays"
-                type="number"
-                min="1"
-                max="365"
-                placeholder="e.g., 30"
-                class="w-full"
-                @change="handleFormChange"
-                required
-              />
-            </div>
+                <div class="space-y-2">
+                  <Label for="forecast">Forecast Days</Label>
+                  <Input 
+                    id="forecast"
+                    v-model="formInputs.forecastDays"
+                    type="number"
+                    min="1"
+                    max="365"
+                    placeholder="e.g., 30"
+                    class="w-full"
+                    @change="handleFormChange"
+                    required
+                  />
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex gap-4">
+                <Button 
+                  type="submit" 
+                  :disabled="isLoading"
+                >
+                  <Loader2 
+                    v-if="isLoading" 
+                    class="mr-2 h-4 w-4 animate-spin"
+                  />
+                  {{ isLoading ? 'Processing...' : 'Generate Prediction' }}
+                </Button>
+                
+                <Button 
+                  type="button"
+                  variant="outline"
+                  @click="resetForm"
+                  :disabled="isLoading"
+                >
+                  Reset
+                </Button>
+              </div>
+            </form>
+
+            <!-- Error Display -->
+            <Alert 
+              v-if="error" 
+              variant="destructive"
+            >
+              <AlertCircle class="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{{ error }}</AlertDescription>
+            </Alert>
           </div>
 
-          <!-- Action Buttons -->
-          <div class="flex gap-4">
-            <Button 
-              type="submit" 
-              :disabled="isLoading"
-            >
-              <Loader2 
-                v-if="isLoading" 
-                class="mr-2 h-4 w-4 animate-spin"
-              />
-              {{ isLoading ? 'Processing...' : 'Generate Prediction' }}
-            </Button>
-            
-            <Button 
-              type="button"
-              variant="outline"
-              @click="resetForm"
-              :disabled="isLoading"
-            >
-              Reset
-            </Button>
+          <!-- Right Column: Graph -->
+          <div class="h-full">
+            <div v-if="predictionData" class="h-full">
+              <h2 class="text-xl font-semibold mb-6">
+                Prediction Results for {{ formInputs.symbol }}
+              </h2>
+
+              <!-- Chart Container -->
+              <Card class="h-[calc(100%-4rem)]">
+                <CardContent class="p-0 h-full">
+                  <div 
+                    ref="plotlyContainer" 
+                    class="w-full h-full rounded-lg"
+                  />
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </form>
-
-        <!-- Error Display -->
-        <Alert 
-          v-if="error" 
-          variant="destructive"
-          class="mt-4"
-        >
-          <AlertCircle class="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{{ error }}</AlertDescription>
-        </Alert>
-
-        <!-- Results Section -->
-        <div v-if="predictionData" class="mt-8">
-          <h2 class="text-xl font-semibold mb-6">
-            Prediction Results for {{ formInputs.symbol }}
-          </h2>
-
-          <!-- Chart Container -->
-          <Card>
-            <CardContent class="p-0">
-              <div 
-                ref="plotlyContainer" 
-                class="w-full h-[600px] rounded-lg"
-              />
-            </CardContent>
-          </Card>
         </div>
       </CardContent>
+      
     </Card>
   </div>
 </template>
