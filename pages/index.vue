@@ -161,7 +161,7 @@
                     max="90"
                     placeholder="e.g., 30"
                     class="w-full"
-                    @change="handleFormChange"
+                    
                     required
                   />
                 </div>
