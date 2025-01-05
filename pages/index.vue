@@ -158,7 +158,7 @@
                     v-model="formInputs.forecastDays"
                     type="number"
                     min="1"
-                    max="365"
+                    max="90"
                     placeholder="e.g., 30"
                     class="w-full"
                     @change="handleFormChange"
