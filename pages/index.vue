@@ -79,7 +79,7 @@
                       </span>
                     </div>
                     <div>
-                      <span class="text-sm text-muted-foreground">Change</span>
+                      <span class="text-sm text-muted-foreground">Price Change</span>
                       <div class="flex items-center space-x-2">
                         <ArrowUp 
                           v-if="liveData.price_change > 0" 
@@ -235,7 +235,7 @@
       />
     </template>
   </DockedLayout>
-  
+
   <!-- Keep the widget mounted but hide it when maximized -->
   <div :class="[
     'fixed bottom-4 right-4 transition-opacity duration-300',
@@ -249,7 +249,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Loader2, AlertCircle } from 'lucide-vue-next'
+import { Loader2, AlertCircle, ArrowUp, ArrowDown } from 'lucide-vue-next'
 
 // Fixed component imports
 import UiCard from '@/components/ui/card/Card.vue'
@@ -337,7 +337,7 @@ interface LiveData {
 const formInputs = ref<FormInputs>({
   symbol: 'META',
   lookbackYears: '1',
-  forecastDays: 5
+  forecastDays: 40
 })
 
 const isLoading = ref(false)
@@ -546,7 +546,7 @@ const resetForm = () => {
   formInputs.value = {
     symbol: 'META',
     lookbackYears: '1',
-    forecastDays: 5
+    forecastDays: 40
   }
   predictionData.value = null
   error.value = null
