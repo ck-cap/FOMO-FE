@@ -198,7 +198,21 @@
   const messagesContainer = ref<HTMLElement | null>(null)
   const isTyping = ref(false)
   const tableId = ref<string | null>(null)
+
+  // Initialize chat when widget is first opened
+watchEffect(() => {
+  if (isOpen.value && messages.value.length === 0 && !tableId.value) {
+    startNewChat()
+  }
+})
   
+// Preserve chat state when maximizing/minimizing
+watchEffect(() => {
+  if (props.modelValue) {
+    isOpen.value = true
+  }
+})
+
   // Preserve chat state
   let preservedState = {
     messages: [] as Message[],
@@ -238,11 +252,8 @@
   }
   
   const toggleChat = () => {
-    isOpen.value = !isOpen.value
-    if (isOpen.value && messages.value.length === 0) {
-      startNewChat()
-    }
-  }
+  isOpen.value = !isOpen.value
+}
   
   const copyToClipboard = async (text: string) => {
     try {

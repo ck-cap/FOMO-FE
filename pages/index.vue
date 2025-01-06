@@ -230,19 +230,21 @@
     <!-- Chat widget -->
     <template #widget>
       <ChatWidget 
-        v-if="isChatMaximized"
         v-model="isChatMaximized"
         class="h-full"
       />
     </template>
   </DockedLayout>
-
-    <!-- Floating chat widget -->
+  
+  <!-- Keep the widget mounted but hide it when maximized -->
+  <div :class="[
+    'fixed bottom-4 right-4 transition-opacity duration-300',
+    isChatMaximized ? 'opacity-0 pointer-events-none' : 'opacity-100'
+  ]">
     <ChatWidget 
-    v-if="!isChatMaximized"
-    v-model="isChatMaximized"
-  />
-
+      v-model="isChatMaximized"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
