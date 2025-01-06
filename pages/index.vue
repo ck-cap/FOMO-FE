@@ -1,4 +1,5 @@
 <template>
+  <DockedLayout :is-widget-maximized="isChatMaximized">
   <div class="container mx-auto px-4 py-8">
     <Card class="bg-white rounded-lg shadow">
       <CardHeader>
@@ -203,7 +204,7 @@
           </div>
 
           <!-- Right Column: Graph -->
-          <div class="h-full">
+          <div class="h-full min-h-[600px]">
             <div v-if="predictionData" class="h-full">
               <h2 class="text-xl font-semibold mb-6">
                 Prediction Results for {{ formInputs.symbol }}
@@ -215,6 +216,7 @@
                   <div 
                     ref="plotlyContainer" 
                     class="w-full h-full rounded-lg"
+                    style="min-height: 500px;"
                   />
                 </CardContent>
               </Card>
@@ -225,6 +227,22 @@
       
     </Card>
   </div>
+    <!-- Chat widget -->
+    <template #widget>
+      <ChatWidget 
+        v-if="isChatMaximized"
+        v-model="isChatMaximized"
+        class="h-full"
+      />
+    </template>
+  </DockedLayout>
+
+    <!-- Floating chat widget -->
+    <ChatWidget 
+    v-if="!isChatMaximized"
+    v-model="isChatMaximized"
+  />
+
 </template>
 
 <script setup lang="ts">
@@ -236,6 +254,7 @@ import UiCard from '@/components/ui/card/Card.vue'
 import UiCardHeader from '@/components/ui/card/CardHeader.vue'
 import UiCardTitle from '@/components/ui/card/CardTitle.vue'
 import UiCardContent from '@/components/ui/card/CardContent.vue'
+import UiBadge from '@/components/ui/badge/Badge.vue'
 
 import UiSelect from '@/components/ui/select/Select.vue'
 import UiSelectContent from '@/components/ui/select/SelectContent.vue'
@@ -250,8 +269,9 @@ import UiLabel from '@/components/ui/label/Label.vue'
 import UiAlert from '@/components/ui/alert/Alert.vue'
 import UiAlertTitle from '@/components/ui/alert/AlertTitle.vue'
 import UiAlertDescription from '@/components/ui/alert/AlertDescription.vue'
+import DockedLayout from '@/components/DockedLayout.vue'
+import ChatWidget from '@/components/ChatWidget.vue'
 
-import UiBadge from '@/components/ui/badge/Badge.vue'
 
 // Rename components for template usage
 const Card = UiCard
@@ -270,6 +290,8 @@ const Alert = UiAlert
 const AlertTitle = UiAlertTitle
 const AlertDescription = UiAlertDescription
 const Badge = UiBadge
+const isChatMaximized = ref(false)
+
 
 // Available tickers
 const availableTickers = ['META', 'AAPL', 'GOOG', 'MSFT', 'NVDA']
@@ -288,7 +310,7 @@ interface StockData {
 }
 
 interface MarketStatus {
-  state: string
+  state: "OPEN" | "CLOSED"; 
   next_open: string | null
   last_close: string | null
   is_regular_session: boolean
@@ -311,9 +333,9 @@ interface LiveData {
 }
 
 const formInputs = ref<FormInputs>({
-  symbol: 'AAPL',
+  symbol: 'META',
   lookbackYears: '1',
-  forecastDays: 30
+  forecastDays: 5
 })
 
 const isLoading = ref(false)
@@ -359,11 +381,50 @@ const fetchLiveData = async (symbol: string) => {
     const config = useRuntimeConfig()
     const response = await fetch(`${config.public.apiBaseUrl}/live/${symbol}`)
     if (!response.ok) throw new Error('Failed to fetch live data')
-    const result = await response.json()
+    const result = await response.json()    
+    // Validate market status before assignment
+    if (!result.data?.market_status?.state) {
+      throw new Error('Invalid market status data received')
+    }
+    
+    // Validate that state is either "OPEN" or "CLOSED"
+    if (!['OPEN', 'CLOSED'].includes(result.data.market_status.state)) {
+      throw new Error(`Invalid market state: ${result.data.market_status.state}`)
+    }
+    
     liveData.value = result.data
+    
+    // Log market status changes for debugging
+    console.log('Market Status:', result.data.market_status)
+    
+    // Handle market status change
+    handleMarketStatusChange(result.data.market_status)
+    
   } catch (err) {
     console.error('Error fetching live data:', err)
     error.value = err instanceof Error ? err.message : 'Failed to fetch live data'
+
+    // Reset market status on error
+    if (liveData.value) {
+      liveData.value.market_status.state = 'CLOSED'
+    }
+  }
+}
+// Market status change handler
+const handleMarketStatusChange = (status: MarketStatus) => {
+  if (status.state === 'OPEN') {
+    // Ensure refresh interval is running
+    if (!refreshInterval) {
+      refreshInterval = setInterval(() => {
+        fetchLiveData(formInputs.value.symbol)
+      }, 10000)
+    }
+  } else {
+    // Clear interval if market closes
+    if (refreshInterval) {
+      clearInterval(refreshInterval)
+      refreshInterval = null
+    }
   }
 }
 
@@ -410,11 +471,21 @@ const renderChart = async () => {
     const doc = parser.parseFromString(graphHtml, 'text/html')
     const plotlyDiv = doc.querySelector('.plotly-graph-div')
 
-    if (!plotlyDiv) {
+    if (!plotlyDiv || !(plotlyDiv instanceof HTMLElement)) {
       throw new Error('Graph content not found')
     }
 
     plotlyContainer.value.innerHTML = plotlyDiv.outerHTML
+    // Set fixed dimensions for the plot
+    plotlyContainer.value.innerHTML = ''
+    plotlyDiv.style.width = '100%'
+    plotlyDiv.style.height = '100%'
+    plotlyDiv.style.minHeight = '500px'
+    plotlyContainer.value.appendChild(plotlyDiv)
+
+    if (window.Plotly) {
+      window.Plotly.Plots.resize(plotlyDiv)
+    }
 
     // Execute scripts
     doc.querySelectorAll('script').forEach(script => {
@@ -453,8 +524,15 @@ const generatePrediction = async () => {
 
     predictionData.value = await response.json()
     await nextTick()
-    await renderChart()
-  } catch (err) {
+    if (plotlyContainer.value) {
+    const resizeObserver = new ResizeObserver(() => {
+      if (predictionData.value) {
+        renderChart()
+      }
+    })
+    resizeObserver.observe(plotlyContainer.value)
+  }  
+} catch (err) {
     error.value = err instanceof Error ? err.message : 'An unexpected error occurred'
   } finally {
     isLoading.value = false
@@ -464,9 +542,9 @@ const generatePrediction = async () => {
 // Reset form
 const resetForm = () => {
   formInputs.value = {
-    symbol: 'AAPL',
+    symbol: 'META',
     lookbackYears: '1',
-    forecastDays: 30
+    forecastDays: 5
   }
   predictionData.value = null
   error.value = null
@@ -475,21 +553,25 @@ const resetForm = () => {
 let refreshInterval: ReturnType<typeof setInterval> | null = null
 
 onMounted(async () => {
-  await loadPlotly()
-  await fetchLiveData(formInputs.value.symbol)
-  await generatePrediction()
-  
-  // Set up refresh interval when market is open
-  refreshInterval = setInterval(() => {
+  try {
+    await loadPlotly()
+    await fetchLiveData(formInputs.value.symbol)
+    await generatePrediction()
+    
+    // Initial market status check
     if (liveData.value?.market_status.state === 'OPEN') {
-      fetchLiveData(formInputs.value.symbol)
+      handleMarketStatusChange(liveData.value.market_status)
     }
-  }, 10000) // Refresh every 10 seconds when market is open
+  } catch (err) {
+    console.error('Error during component mount:', err)
+    error.value = 'Failed to initialize component'
+  }
 })
 
 onBeforeUnmount(() => {
   if (refreshInterval) {
     clearInterval(refreshInterval)
+    refreshInterval = null
   }
 })
 </script>
@@ -519,5 +601,16 @@ declare global {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: .5; }
+}
+
+.container {
+  max-width: 100%;
+}
+
+/* Ensure the chart container maintains aspect ratio */
+.plotly-graph-div {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 500px !important;
 }
 </style>
